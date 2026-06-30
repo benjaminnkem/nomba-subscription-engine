@@ -1,13 +1,16 @@
 import { Module } from '@nestjs/common';
-import { AppService } from './app.service';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
 import { HealthModule } from './health/health.module';
-import { ConfigModule } from '@nestjs/config';
+import { DatabaseModule } from './database/database.module';
+import { ConfigModule } from './config/config.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
     ConfigModule,
+    DatabaseModule,
+    AuthModule,
     ThrottlerModule.forRoot([
       {
         ttl: 60000,
@@ -18,6 +21,6 @@ import { ConfigModule } from '@nestjs/config';
     HealthModule,
   ],
   controllers: [],
-  providers: [AppService],
+  providers: [],
 })
 export class AppModule {}
