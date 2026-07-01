@@ -1,14 +1,41 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ApiKey } from 'src/api-keys/entities/api-key.entity';
-import { AuditLog } from 'src/audit/entities/audit-log.entity';
-import { User } from 'src/auth/entities/user.entity';
-import { Customer } from 'src/customers/entities/customer.entity';
-import { Merchant } from 'src/merchants/entities/merchant.entity';
-import { Plan } from 'src/plans/entities/plan.entity';
+import { ApiKey } from '../api-keys/entities/api-key.entity';
+import { AuditLog } from '../audit/entities/audit-log.entity';
+import { Customer } from '../customers/entities/customer.entity';
+import { EventStore } from '../events/entities/event-store.entity';
+import { InvoiceItem } from '../invoices/entities/invoice-item.entity';
+import { Invoice } from '../invoices/entities/invoice.entity';
+import { Merchant } from '../merchants/entities/merchant.entity';
+import { Notification } from '../notifications/entities/notification.entity';
+import { NombaWebhookEvent } from '../payments/entities/nomba-webhook-event.entity';
+import { PaymentAttempt } from '../payments/entities/payment-attempt.entity';
+import { Payment } from '../payments/entities/payment.entity';
+import { Plan } from '../plans/entities/plan.entity';
+import { Subscription } from '../subscriptions/entities/subscription.entity';
+import { User } from '../auth/entities/user.entity';
+import { WebhookDelivery } from '../webhooks/entities/webhook-delivery.entity';
+import { Webhook } from '../webhooks/entities/webhook.entity';
 
-const entities = [User, Merchant, AuditLog, ApiKey, Customer, Plan];
+const entities = [
+  User,
+  Merchant,
+  ApiKey,
+  Plan,
+  Customer,
+  Subscription,
+  Invoice,
+  InvoiceItem,
+  Payment,
+  PaymentAttempt,
+  NombaWebhookEvent,
+  Webhook,
+  WebhookDelivery,
+  AuditLog,
+  Notification,
+  EventStore,
+];
 
 @Module({
   imports: [
