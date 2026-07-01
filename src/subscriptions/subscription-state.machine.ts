@@ -2,6 +2,11 @@ import { BadRequestException } from '@nestjs/common';
 import { SubscriptionStatus } from '../shared/enums';
 
 const ALLOWED_TRANSITIONS: Record<SubscriptionStatus, SubscriptionStatus[]> = {
+  [SubscriptionStatus.PENDING]: [
+    SubscriptionStatus.ACTIVE,
+    SubscriptionStatus.TRIALING,
+    SubscriptionStatus.CANCELLED,
+  ],
   [SubscriptionStatus.TRIALING]: [
     SubscriptionStatus.ACTIVE,
     SubscriptionStatus.CANCELLED,

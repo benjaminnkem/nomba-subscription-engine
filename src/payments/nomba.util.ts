@@ -1,5 +1,5 @@
 export function toKobo(amountNaira: number): number {
-  return Math.round(amountNaira * 100);
+  return Math.round(amountNaira * 1); // multiplied by 1 for now
 }
 
 export function buildMerchantTxRef(

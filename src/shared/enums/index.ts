@@ -6,6 +6,7 @@ export enum PlanInterval {
 }
 
 export enum SubscriptionStatus {
+  PENDING = 'pending',
   TRIALING = 'trialing',
   ACTIVE = 'active',
   PAST_DUE = 'past_due',

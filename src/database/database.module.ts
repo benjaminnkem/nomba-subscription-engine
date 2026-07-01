@@ -41,17 +41,23 @@ const entities = [
   imports: [
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        type: 'postgres',
-        host: config.get<string>('database.host'),
-        port: config.get<number>('database.port'),
-        username: config.get<string>('database.username'),
-        password: config.get<string>('database.password'),
-        database: config.get<string>('database.name'),
-        entities,
-        synchronize: config.get<string>('nodeEnv') === 'development',
-        logging: config.get<string>('data.logging') === 'true',
-      }),
+      useFactory: (config: ConfigService) => {
+        const isDevelopment = config.get<string>('nodeEnv') === 'development';
+
+        return {
+          type: 'postgres',
+          host: config.get<string>('database.host'),
+          port: config.get<number>('database.port'),
+          username: config.get<string>('database.username'),
+          password: config.get<string>('database.password'),
+          database: config.get<string>('database.name'),
+          entities,
+          migrations: [`${__dirname}/migrations/*{.ts,.js}`],
+          migrationsRun: isDevelopment,
+          synchronize: isDevelopment,
+          logging: config.get<string>('data.logging') === 'true',
+        };
+      },
     }),
   ],
 })

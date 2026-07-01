@@ -91,13 +91,17 @@ export class NombaService {
         transactionId,
         failureReason: response.ok
           ? undefined
-          : (response.data?.message as string | undefined) ??
-            'Tokenized charge failed',
+          : ((response.data?.message as string | undefined) ??
+            'Tokenized charge failed'),
         merchantTxRef,
         raw: response.data,
       };
     } catch (error) {
-      this.logger.error({ merchantTxRef, error }, 'Nomba tokenized charge failed');
+      this.logger.error(
+        { merchantTxRef, error },
+        'Nomba tokenized charge failed',
+      );
+
       return {
         success: false,
         failureReason: 'Payment gateway unavailable',
@@ -114,6 +118,7 @@ export class NombaService {
         { orderReference: request.orderReference },
         'Nomba credentials not configured — simulating checkout',
       );
+
       return {
         success: true,
         checkoutUrl: `https://checkout.nomba.com/simulated/${request.orderReference}`,
@@ -121,32 +126,34 @@ export class NombaService {
       };
     }
 
-    try {
-      const response = await this.request<Record<string, unknown>>(
-        'POST',
-        '/v1/checkout/order',
-        {
-          order: {
-            orderReference: request.orderReference,
-            amount: toKobo(request.amountNaira),
-            currency: request.currency,
-            callbackUrl: request.callbackUrl,
-            customerId: request.customerId,
-            customerEmail: request.customerEmail,
-          },
-        },
-        request.orderReference,
-      );
+    const body = {
+      order: {
+        orderReference: request.orderReference,
+        amount: toKobo(request.amountNaira),
+        currency: request.currency,
+        callbackUrl: request.callbackUrl,
+        customerId: request.customerId,
+        customerEmail: request.customerEmail,
+      },
+    };
 
-      const checkoutUrl = response.data?.checkoutUrl as string | undefined;
+    try {
+      const response = await this.request<{
+        data: { checkoutLink: string };
+        message?: string;
+        status?: string;
+      }>('POST', '/v1/checkout/order', body, request.orderReference);
+
+      const checkoutUrl =
+        (response.data?.data?.checkoutLink as string | undefined) ?? undefined;
 
       return {
         success: response.ok && Boolean(checkoutUrl),
         checkoutUrl,
         failureReason: response.ok
           ? undefined
-          : (response.data?.message as string | undefined) ??
-            'Checkout session creation failed',
+          : ((response.data?.message as string | undefined) ??
+            'Checkout session creation failed'),
         raw: response.data,
       };
     } catch (error) {
@@ -154,6 +161,7 @@ export class NombaService {
         { orderReference: request.orderReference, error },
         'Nomba checkout creation failed',
       );
+
       return {
         success: false,
         failureReason: 'Payment gateway unavailable',
@@ -164,52 +172,59 @@ export class NombaService {
   private isConfigured(): boolean {
     return Boolean(
       this.config.get<string>('nomba.clientId') &&
-        this.config.get<string>('nomba.clientSecret') &&
-        this.config.get<string>('nomba.accountId'),
+      this.config.get<string>('nomba.clientSecret') &&
+      this.config.get<string>('nomba.accountId'),
     );
   }
 
   private async getAccessToken(): Promise<string> {
-    if (
-      this.cachedToken &&
-      Date.now() < this.cachedToken.expiresAt - TOKEN_REFRESH_BUFFER_MS
-    ) {
-      return this.cachedToken.accessToken;
+    try {
+      if (
+        this.cachedToken &&
+        Date.now() < this.cachedToken.expiresAt - TOKEN_REFRESH_BUFFER_MS
+      ) {
+        return this.cachedToken.accessToken;
+      }
+
+      const apiUrl = this.config.get<string>('nomba.apiUrl');
+      const accountId = this.config.get<string>('nomba.accountId');
+      const clientId = this.config.get<string>('nomba.clientId');
+      const clientSecret = this.config.get<string>('nomba.clientSecret');
+
+      const tokenUrl = `${apiUrl}/v1/auth/token/issue`;
+      const response = await fetch(tokenUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          accountId: accountId!,
+        },
+        body: JSON.stringify({
+          grant_type: 'client_credentials',
+          client_id: clientId,
+          client_secret: clientSecret,
+        }),
+      });
+
+      const body = (await response.json()) as NombaApiResponse;
+      const accessToken = body.data?.access_token as string | undefined;
+
+      if (!response.ok || !accessToken) {
+        throw new Error(
+          (body.message as string | undefined) ??
+            'Failed to issue Nomba access token',
+        );
+      }
+
+      this.cachedToken = {
+        accessToken,
+        expiresAt: Date.now() + TOKEN_TTL_MS,
+      };
+
+      return accessToken;
+    } catch (error) {
+      this.logger.error({ error }, 'Nomba access token issuance failed');
+      throw error;
     }
-
-    const apiUrl = this.config.get<string>('nomba.apiUrl');
-    const accountId = this.config.get<string>('nomba.accountId');
-    const clientId = this.config.get<string>('nomba.clientId');
-    const clientSecret = this.config.get<string>('nomba.clientSecret');
-
-    const response = await fetch(`${apiUrl}/v1/auth/token/issue`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        accountId: accountId!,
-      },
-      body: JSON.stringify({
-        grant_type: 'client_credentials',
-        client_id: clientId,
-        client_secret: clientSecret,
-      }),
-    });
-
-    const body = (await response.json()) as NombaApiResponse;
-    const accessToken = body.data?.access_token as string | undefined;
-
-    if (!response.ok || !accessToken) {
-      throw new Error(
-        (body.message as string | undefined) ?? 'Failed to issue Nomba access token',
-      );
-    }
-
-    this.cachedToken = {
-      accessToken,
-      expiresAt: Date.now() + TOKEN_TTL_MS,
-    };
-
-    return accessToken;
   }
 
   private async request<T>(

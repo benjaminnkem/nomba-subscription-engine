@@ -127,6 +127,7 @@ export class NombaWebhooksService {
     requestId: string,
   ): Promise<void> {
     const payment = await this.resolvePayment(payload);
+
     if (!payment) {
       this.logger.warn(
         `payment_success webhook could not be matched to a payment (${requestId})`,
@@ -174,29 +175,52 @@ export class NombaWebhooksService {
     await this.invoicesService.markPaid(invoice);
 
     let subscription: Subscription | null = null;
+    let previousSubscriptionStatus: SubscriptionStatus | null = null;
     if (payment.subscriptionId) {
       subscription = await this.subscriptionRepo.findOne({
         where: { id: payment.subscriptionId, merchantId: payment.merchantId },
       });
 
       if (subscription) {
+        previousSubscriptionStatus = subscription.status;
         const plan = await this.planRepo.findOne({
           where: { id: subscription.planId, merchantId: payment.merchantId },
         });
 
         if (plan) {
-          const intervalDays = this.prorationService.getIntervalDays(
-            plan.interval,
-            plan.customIntervalDays,
-          );
-          subscription.currentPeriodStart = new Date();
-          subscription.currentPeriodEnd = new Date(
-            Date.now() + intervalDays * 86400000,
-          );
+          const now = new Date();
+          subscription.currentPeriodStart = now;
           subscription.dunningAttemptCount = 0;
+
+          if (
+            previousSubscriptionStatus === SubscriptionStatus.PENDING &&
+            plan.trialDays > 0
+          ) {
+            subscription.trialEndsAt = new Date(
+              now.getTime() + plan.trialDays * 86400000,
+            );
+            subscription.currentPeriodEnd = subscription.trialEndsAt;
+          } else {
+            const intervalDays = this.prorationService.getIntervalDays(
+              plan.interval,
+              plan.customIntervalDays,
+            );
+            subscription.currentPeriodEnd = new Date(
+              now.getTime() + intervalDays * 86400000,
+            );
+          }
         }
 
-        if (subscription.status !== SubscriptionStatus.ACTIVE) {
+        if (previousSubscriptionStatus === SubscriptionStatus.PENDING) {
+          const targetStatus =
+            plan && plan.trialDays > 0
+              ? SubscriptionStatus.TRIALING
+              : SubscriptionStatus.ACTIVE;
+          await this.subscriptionsService.transitionStatus(
+            subscription,
+            targetStatus,
+          );
+        } else if (subscription.status !== SubscriptionStatus.ACTIVE) {
           await this.subscriptionsService.transitionStatus(
             subscription,
             SubscriptionStatus.ACTIVE,
@@ -221,6 +245,13 @@ export class NombaWebhooksService {
           aggregateType: 'payment',
           aggregateId: payment.id,
           data: { payment, invoice },
+        });
+      } else if (previousSubscriptionStatus === SubscriptionStatus.PENDING) {
+        await this.eventsService.emit(DOMAIN_EVENTS.SUBSCRIPTION_UPDATED, {
+          merchantId: payment.merchantId,
+          aggregateType: 'subscription',
+          aggregateId: subscription.id,
+          data: { subscription, invoice, activated: true },
         });
       } else {
         await this.eventsService.emit(DOMAIN_EVENTS.SUBSCRIPTION_RENEWED, {
@@ -295,7 +326,7 @@ export class NombaWebhooksService {
       const subscription = await this.subscriptionRepo.findOne({
         where: { id: payment.subscriptionId, merchantId: payment.merchantId },
       });
-      if (subscription) {
+      if (subscription && subscription.status !== SubscriptionStatus.PENDING) {
         await this.subscriptionsService.transitionStatus(
           subscription,
           SubscriptionStatus.PAST_DUE,

@@ -15,7 +15,7 @@ export class Subscription extends BaseEntity {
   @Column({
     type: 'enum',
     enum: SubscriptionStatus,
-    default: SubscriptionStatus.TRIALING,
+    default: SubscriptionStatus.PENDING,
   })
   status: SubscriptionStatus;
 

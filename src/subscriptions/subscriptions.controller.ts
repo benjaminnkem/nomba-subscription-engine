@@ -11,6 +11,7 @@ import { CurrentMerchant } from '../common/decorators/current-merchant.decorator
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { ChangePlanDto } from './dto/change-plan.dto';
 import { CreateSubscriptionDto } from './dto/create-subscription.dto';
+import { CreateSubscriptionResponseDto } from './dto/create-subscription-response.dto';
 import { SubscriptionsService } from './subscriptions.service';
 
 @ApiTags('Subscriptions')
@@ -20,9 +21,13 @@ export class SubscriptionsController {
   constructor(private subscriptionsService: SubscriptionsService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Create a subscription' })
+  @ApiOperation({
+    summary: 'Create a subscription and return a Nomba checkout URL',
+    description:
+      'Creates a pending subscription, initial invoice, and Nomba checkout session. The subscription becomes active (or trialing) after a successful Nomba payment webhook.',
+  })
   @ApiBody({ type: CreateSubscriptionDto })
-  @ApiResponse({ status: 201 })
+  @ApiResponse({ status: 201, type: CreateSubscriptionResponseDto })
   create(
     @CurrentMerchant() merchantId: string,
     @CurrentUser() user: { email: string },

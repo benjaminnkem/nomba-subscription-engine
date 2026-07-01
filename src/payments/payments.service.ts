@@ -32,7 +32,10 @@ export class PaymentsService {
     merchantId: string,
     dto: CreateCheckoutDto,
   ): Promise<{ checkoutUrl: string; paymentId: string }> {
-    const invoice = await this.invoicesService.findOne(merchantId, dto.invoiceId);
+    const invoice = await this.invoicesService.findOne(
+      merchantId,
+      dto.invoiceId,
+    );
     if (invoice.status !== InvoiceStatus.PENDING) {
       throw new BadRequestException('Invoice is not pending payment');
     }
@@ -64,7 +67,8 @@ export class PaymentsService {
 
     if (!result.success || !result.checkoutUrl) {
       payment.status = PaymentStatus.FAILED;
-      payment.failureReason = result.failureReason ?? 'Checkout creation failed';
+      payment.failureReason =
+        result.failureReason ?? 'Checkout creation failed';
       await this.paymentRepo.save(payment);
       throw new BadRequestException(payment.failureReason);
     }
