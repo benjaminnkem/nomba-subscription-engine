@@ -5,12 +5,16 @@ import { HealthModule } from './health/health.module';
 import { DatabaseModule } from './database/database.module';
 import { ConfigModule } from './config/config.module';
 import { AuthModule } from './auth/auth.module';
+import { CommonModule } from './common/common.module';
+import { AuditModule } from './audit/audit.module';
 
 @Module({
   imports: [
     ConfigModule,
     DatabaseModule,
+    CommonModule,
     AuthModule,
+    AuditModule,
     ThrottlerModule.forRoot([
       {
         ttl: 60000,
