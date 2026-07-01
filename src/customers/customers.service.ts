@@ -7,6 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AuditAction } from '../shared/enums';
 import { AuditService } from '../audit/audit.service';
+import { PaginationDto } from '../common/dto/pagination.dto';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
 import { Customer } from './entities/customer.entity';
@@ -42,11 +43,17 @@ export class CustomersService {
     return saved;
   }
 
-  async findAll(merchantId: string): Promise<Customer[]> {
-    return this.customerRepo.find({
+  async findAll(
+    merchantId: string,
+    { page = 1, limit = 20 }: PaginationDto,
+  ): Promise<{ data: Customer[]; total: number }> {
+    const [data, total] = await this.customerRepo.findAndCount({
       where: { merchantId },
       order: { createdAt: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
     });
+    return { data, total };
   }
 
   async findOne(merchantId: string, id: string): Promise<Customer> {

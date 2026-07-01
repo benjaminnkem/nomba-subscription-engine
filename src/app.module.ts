@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { CommonModule } from './common/common.module';
 import { AuditModule } from './audit/audit.module';
 import { CustomersModule } from './customers/customers.module';
+import { PlansModule } from './plans/plans.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { CustomersModule } from './customers/customers.module';
     ScheduleModule.forRoot(),
     HealthModule,
     CustomersModule,
+    PlansModule,
   ],
   controllers: [],
   providers: [],

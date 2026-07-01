@@ -6,8 +6,9 @@ import { AuditLog } from 'src/audit/entities/audit-log.entity';
 import { User } from 'src/auth/entities/user.entity';
 import { Customer } from 'src/customers/entities/customer.entity';
 import { Merchant } from 'src/merchants/entities/merchant.entity';
+import { Plan } from 'src/plans/entities/plan.entity';
 
-const entities = [User, Merchant, AuditLog, ApiKey, Customer];
+const entities = [User, Merchant, AuditLog, ApiKey, Customer, Plan];
 
 @Module({
   imports: [

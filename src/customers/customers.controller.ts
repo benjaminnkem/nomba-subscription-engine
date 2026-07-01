@@ -1,14 +1,24 @@
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiBody,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 import { ApiWrappedResponse } from '../common/dto/api-response.dto';
 import { CurrentMerchant } from '../common/decorators/current-merchant.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { PaginationDto } from '../common/dto/pagination.dto';
 import { CustomersService } from './customers.service';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import {
@@ -46,8 +56,11 @@ export class CustomersController {
     type: CustomerListResponseDto,
     description: 'Paginated customer list',
   })
-  findAll(@CurrentMerchant() merchantId: string) {
-    return this.customersService.findAll(merchantId);
+  findAll(
+    @CurrentMerchant() merchantId: string,
+    @Query() pagination: PaginationDto,
+  ) {
+    return this.customersService.findAll(merchantId, pagination);
   }
 
   @Get(':id')
@@ -80,4 +93,3 @@ export class CustomersController {
     return this.customersService.update(merchantId, id, dto, user.email);
   }
 }
-
