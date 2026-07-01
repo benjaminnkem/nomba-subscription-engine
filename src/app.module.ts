@@ -7,6 +7,7 @@ import { ConfigModule } from './config/config.module';
 import { AuthModule } from './auth/auth.module';
 import { CommonModule } from './common/common.module';
 import { AuditModule } from './audit/audit.module';
+import { CustomersModule } from './customers/customers.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { AuditModule } from './audit/audit.module';
     ]),
     ScheduleModule.forRoot(),
     HealthModule,
+    CustomersModule,
   ],
   controllers: [],
   providers: [],

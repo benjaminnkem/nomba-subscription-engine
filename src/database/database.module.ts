@@ -4,9 +4,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ApiKey } from 'src/api-keys/entities/api-key.entity';
 import { AuditLog } from 'src/audit/entities/audit-log.entity';
 import { User } from 'src/auth/entities/user.entity';
+import { Customer } from 'src/customers/entities/customer.entity';
 import { Merchant } from 'src/merchants/entities/merchant.entity';
 
-const entities = [User, Merchant, AuditLog, ApiKey];
+const entities = [User, Merchant, AuditLog, ApiKey, Customer];
 
 @Module({
   imports: [
